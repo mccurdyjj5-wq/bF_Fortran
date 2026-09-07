@@ -1,7 +1,7 @@
-program bF
+program bFortran
     !bFORTRAN: A brainfuck interpreter in Fortran.
     !Made by LunaFox
-    !This program is a fully fledged brainfuck interpreter.
+    !This program is a basic brainfuck interpreter.
     !Everything should work to specification. If anything doesn't work, please tell me!
     !All documentaion should be in the readMe. Good luck!
     !Now, onto the main show!
@@ -197,4 +197,4 @@ program bF
     !write(*,*) jmp2
     !write(*,*) ind
     
-end program bF
+end program bFortran
