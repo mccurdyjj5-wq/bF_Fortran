@@ -18,3 +18,9 @@ The most major compatibility issue is EOF, as always. It is currently set-up to 
 The program currently supports a tape size of 30,000 cells. I do not plan on changing this, but I may add an option to use a custom tape size. I do not know the behavior of going out of bounds on the tape array, but just treat it as like C, please. It definitely doesn't support wrapping around, either way.
 ## Other Issues
 There are some Brainfuck programs that do not work, but I can't figure out why. If anyone who is more knowledgeable than I am would like to help, please do! I can only do so much with my current knowledge and experience.
+# Todo
+Here is a list of things I would like to implement in the future. This will be updated as time goes on.
+- Add --debug command-line option
+  - This would dump the tape's contents whenever a # is detected.
+- Add --eof [none,0,255] command-line option to change the EOF behavior. Default = 0
+- Add --unoptimized flag to bF2Fortran to make the compiler **not** optimize the code. 
