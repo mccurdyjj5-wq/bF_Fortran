@@ -1,5 +1,5 @@
 # bF_Fortran
-bF_Fortran is a command line Brainfuck interpreter and compiler suite written in Fortran. It currently only supports Windows, for I have a lack of computers I can install Linux on.
+bF_Fortran is a command line Brainfuck interpreter and compiler suite written in Fortran. It currently only supports Windows, for I lack the knowledge to do cross-compilation.
 # Usage
 bFortran is the interpreter. To use it, just run it with the filename of the program you wish to run, like so:
 ```
