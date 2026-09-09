@@ -7,13 +7,16 @@ program bF2Fortran
     !As always, check the readme for more info.
     !Now, onto the show!
     !Set up the variables, arrays, etc.
+    integer :: arg_count, arg_index, pos_count
+    character(512) :: arg, err_msg
+    logical :: end_ops
     integer :: input_unit
     character(512) :: input_file, output_file
     integer :: file_unit !Hackity Hack Hack 
     integer :: ios !Hackity Hack Hack
-    
+    logical :: unop
     integer :: i,i2,j,j2,k
-    character(:), allocatable :: prgm,l3 !This is our program.
+    character(:), allocatable :: prgm !This is our program.
     character(3000000) :: buffer !Init reading buffer
     integer :: tape(30000)!This is our cell array. It is currently set to 8 bit mode.
     character(1) :: l,p,r
@@ -29,19 +32,60 @@ program bF2Fortran
     1 format(A1,$) !Not used here, just for reference.
     !This is a sample program. If this gets sent out, just know that that shouldn't happen.
     prgm="" !It's a fox.
-    !Bad hack that works
-    if (command_argument_count() < 1) then !If there is no input... 
-        print *, "Usage: bF2Fortran <input.bf> [output.f90]" !Tell them that they are, in fact, an idiot.
+    !This is more 'elegant' of a solution than what I previously had in mind.
+    !Set up our bois
+    unop = .true.
+    input_file = ""
+    output_file = ""
+    arg_count = command_argument_count()
+    pos_count = 0
+    end_ops = .false.
+    !Let's get to checkin, bois!
+    do arg_index = 1, arg_count !While we have arguments to check...
+        call get_command_argument(arg_index, arg) !Get our index.
+        if (.not. end_ops .and. trim(arg) == "--") then !If our options are at the end...
+            end_ops = .true. !Set this as true.
+            cycle !Skip this cycle.
+        end if !Alright.
+        if (.not. end_ops) then !If this is not true...
+            select case(trim(arg)) !Find it.
+                case ("-u", "--unoptimized") !If it is this...
+                    unop = .false. !Set this flag to false
+                    cycle !And go on.
+                case default !If all else fails...
+                    if (len_trim(arg) > 0 .and. arg(1:1) == "-") then !Check amounts of shit
+                        print *, "Error: unknown option: ", trim(arg) !Error out.
+                        stop 1 !And quit. Unlike me, who will maintain this for as long as I can.
+                    end if !Ok
+            end select !Cool
+        end if !Alright
+        pos_count = pos_count + 1 !Add one to this
+        select case (pos_count) !Let's check!
+            case (1) !If it if the input...
+                input_file = trim(arg) !Add this to our input
+            case (2) !If it is the output...
+                output_file = trim(arg) !Add this to our output.
+            case default !If all else fails...
+                print *, "Error: too many positional arguments." !Error out
+                stop 1 !And quit. Unlike me, who will maintain this for as long as I can.
+        end select !So close...
+    end do !And we are done!
+
+    !find our files
+    if (len_trim(input_file) == 0) then !If there is no file, tell the user that they are, in fact, an idiot. 
+        print *, "Usage: bF2Fortran <input.bf> [output.f90] [OPTIONS]" !Syntax 1
+        print *, "Options:" !Syntax 2
+        print *, "-u, --unoptimized : Tells the compiler to not optimize the program." !Syntax 3
         stop 1 !And quit. Just like I almost did on this 'fun' project. God I underestimated this.
-    end if !Ok.
-    call get_command_argument(1, input_file) !Don't know why this is placed here.
-    call get_command_argument(2, output_file) !Don't know why this is placed here.
-    open(newunit=input_unit, file=trim(input_file), status="old", & !Let us look at this file.
-            action="read", iostat=ios)
-    if (ios /= 0) then !If error...
-        print *, "Error: could not open input file: ", trim(input_file) !Say this shtick
-        stop 1 !And quit!
+    end if
+    
+    open(newunit=input_unit, file=trim(input_file), status="old", action="read", iostat=ios, iomsg=err_msg) !Try to open the file.
+    if (ios /= 0) then !If err...
+        print *, "Error: could not open input file: ", trim(input_file) !Tell them about this shit
+        print *, "Details: ", trim(err_msg) !Give them reasons.
+        stop 1 !And quit. Simple enough.
     end if !This isn't that hard!
+    
     do !Noclue why works, but it works regardless so it stays. No touchie. 3:<
         read(input_unit, '(A)', iostat=ios) buffer !Read the file into the buffer.
         if (ios /= 0) exit !If it errors we leave
@@ -50,20 +94,16 @@ program bF2Fortran
     close(input_unit) !We are done with that.
     
     !This is for handling file output. It's actually quite simple!
-    if (command_argument_count()<2) then !If the output argument is missing (It is safe to assume that the input would be there if we've gotten this far)
-        open(newunit=file_unit, file="output.f90", status="replace",action="write", position="append", iostat=ios) !Open the default.
-        if (ios /= 0) then !If error...
-            print *, "Error: could not open output file: output.f90" !Say this shtick
-            stop 1 !And quit!
-        end if !This isn't that hard!
-    else !If it isn't...
-        open(newunit=file_unit, file=trim(output_file), status="replace",action="write", position="append", iostat=ios) !Open the new file.
-        if (ios /= 0) then !If error...
-            print *, "Error: could not open input file: ", trim(input_file) !Say this shtick
-            stop 1 !And quit!
-        end if !This isn't that hard!
-    end if !Done with this, hooray!
-    !open(newunit=file_unit, file="output.f90", status="replace",action="write", position="append", iostat=ios)
+    if (len_trim(output_file) == 0) then !If the output argument is missing...
+        open(newunit=file_unit, file="output.f90", status="replace",action="write",position="append",iostat=ios,iomsg=err_msg) !Open the default file location.
+    else !If it is provided...
+        open(newunit=file_unit,file=trim(output_file),status="replace",action="write",position="append",iostat=ios,iomsg=err_msg) !Open the new file.
+    end if !Alright. Not too hard.
+    if (ios /= 0) then !If error...
+        print *, "Error: could not open output file: ", trim(output_file) !Say this shtick
+        print *, "Details: ", trim(err_msg) !Details ig
+        stop 1 !And quit!
+    end if !Hooray! We are successful!
     !print the header of our program
     write(file_unit,'(A)') "program bF_to_FORTRAN"
     write(file_unit,'(A)') ""
@@ -84,95 +124,111 @@ program bF2Fortran
         l=prgm(i:i) !select case again.
         select case(l) !Now here's the checker *insert funny cat gif*
             case(">"); !If we have to move right...
-                k=1
-                !print '(A)',"j=j+1";
-                i2=i !Set secondary index to our current index
-                do while (.true.) !While in our loop...
-                    r=prgm(i2:i2) !knock-off l
-                    select case(r) !The other checker(board)
-                        case(">"); k=k+1 !If it is another, Increment our count
-                        case DEFAULT; exit !If not, we leave
-                    end select !Alright. That wasn't bad.
-                    i2=i2+1 !Increment index
-                end do !Wow we are done!
-                i=i2-1 !Minus 1
-                !Stinky AI/Stack Overflow hack start
-                !  1. Write the integer into a character variable (internal file)
-                write(l2, '(I0)') k-1
-                print *,l2
-                !  2. Concatenate using //, cleaning up trailing and leading spaces
-                l2 = "call MVR("//trim(l2)//")"
-                print *,l2
-                !Aight, no more AI.
-                write(file_unit,'(A)') trim(l2) !Write to the file.
-                i2=1 !Reset for the next one.
-                k=1 !I have no idea what this does. Please do not touch any of these.
+                if (unop) then !If we are smart...
+                    k=1
+                    !print '(A)',"j=j+1";
+                    i2=i !Set secondary index to our current index
+                    do while (.true.) !While in our loop...
+                        r=prgm(i2:i2) !knock-off l
+                        select case(r) !The other checker(board)
+                            case(">"); k=k+1 !If it is another, Increment our count
+                            case DEFAULT; exit !If not, we leave
+                        end select !Alright. That wasn't bad.
+                        i2=i2+1 !Increment index
+                    end do !Wow we are done!
+                    i=i2-1 !Minus 1
+                    !Stinky hack start
+                    !  1. Write the integer into a character variable (internal file)
+                    write(l2, '(I0)') k-1
+                    print *,l2
+                    !  2. Concatenate using //, cleaning up trailing and leading spaces
+                    l2 = "call MVR("//trim(l2)//")"
+                    print *,l2
+                    !Aight, no more.
+                    write(file_unit,'(A)') trim(l2) !Write to the file.
+                    i2=1 !Reset for the next one.
+                    k=1 !I have no idea what this does. Please do not touch any of these.
+                else !If we are dumb...
+                    write(file_unit,'(A)') "call MVR(1)" !Just increment.
+                end if !Done with that!
             !Next case.
-            case("<"); !print '(A)',"j=j-1"; 
-                k=1
-                i2=i
-                do while (.true.)
-                    r=prgm(i2:i2)
-                    select case(r)
-                        case("<"); k=k+1
-                        case DEFAULT; exit
-                    end select
-                    i2=i2+1
-                end do
-                i=i2-1
-                !  1. Write the integer into a character variable (internal file)
-                write(l2, '(I0)') k-1
-
-                !  2. Concatenate using //, cleaning up trailing and leading spaces
-                l2 = "call MVL("//trim(l2)//")"
-                
-                write(file_unit,'(A)') l2
-                i2=1
-                k=1
+            case("<"); !print '(A)',"j=j-1";
+                if (unop) then
+                    k=1
+                    i2=i
+                    do while (.true.)
+                        r=prgm(i2:i2)
+                        select case(r)
+                            case("<"); k=k+1
+                            case DEFAULT; exit
+                        end select
+                        i2=i2+1
+                    end do
+                    i=i2-1
+                    !  1. Write the integer into a character variable (internal file)
+                    write(l2, '(I0)') k-1
+    
+                    !  2. Concatenate using //, cleaning up trailing and leading spaces
+                    l2 = "call MVL("//trim(l2)//")"
+                    
+                    write(file_unit,'(A)') l2
+                    i2=1
+                    k=1
+                else
+                    write(file_unit,'(A)')"call MVL(1)"
+                end if
             !
-            case("+"); !print '(A)',"tape(j) = tape(j)+1"; 
-                k=1
-                i2=i
-                do while (.true.)
-                    r=prgm(i2:i2)
-                    select case(r)
-                        case("+"); k=k+1
-                        case DEFAULT; exit
-                    end select
-                    i2=i2+1
-                end do
-                i=i2-1
-                !  1. Write the integer into a character variable (internal file)
-                write(l2, '(I0)') k-1
-
-                !  2. Concatenate using //, cleaning up trailing and leading spaces
-                l2 = "call ADD("//trim(l2)//")"
-                
-                write(file_unit,'(A)') l2
-                i2=1
-                k=1        
+            case("+"); !print '(A)',"tape(j) = tape(j)+1";
+                if (unop) then
+                    k=1
+                    i2=i
+                    do while (.true.)
+                        r=prgm(i2:i2)
+                        select case(r)
+                            case("+"); k=k+1
+                            case DEFAULT; exit
+                        end select
+                        i2=i2+1
+                    end do
+                    i=i2-1
+                    !  1. Write the integer into a character variable (internal file)
+                    write(l2, '(I0)') k-1
+    
+                    !  2. Concatenate using //, cleaning up trailing and leading spaces
+                    l2 = "call ADD("//trim(l2)//")"
+                    
+                    write(file_unit,'(A)') l2
+                    i2=1
+                    k=1        
+                else
+                    write(file_unit,'(A)')"call ADD(1)"
+                end if
             !
             case("-"); !print '(A)',"tape(j) = tape(j)-1"; 
-                i2=i
-                k=1
-                do while (.true.)
-                    r=prgm(i2:i2)
-                    select case(r)
-                        case("-"); k=k+1
-                        case DEFAULT; exit
-                    end select
-                    i2=i2+1
-                end do
-                i=i2-1
-                !  1. Write the integer into a character variable (internal file)
-                write(l2, '(I0)') k-1
-
-                !  2. Concatenate using //, cleaning up trailing and leading spaces
-                l2 = "call SUB("//trim(l2)//")"
-                
-                write(file_unit,'(A)') l2
-                i2=1
-                k=1
+                if (unop) then
+                    i2=i
+                    k=1
+                    do while (.true.)
+                        r=prgm(i2:i2)
+                        select case(r)
+                            case("-"); k=k+1
+                            case DEFAULT; exit
+                        end select
+                        i2=i2+1
+                    end do
+                    i=i2-1
+                    !  1. Write the integer into a character variable (internal file)
+                    write(l2, '(I0)') k-1
+    
+                    !  2. Concatenate using //, cleaning up trailing and leading spaces
+                    l2 = "call SUB("//trim(l2)//")"
+                    
+                    write(file_unit,'(A)') l2
+                    i2=1
+                    k=1
+                else
+                    write(file_unit,'(A)')"call SUB(1)"
+                end if
             !Now we are done with the optimizing part.
             case("."); print '(A)',"write(*,1) achar(tape(j))"; write(file_unit,'(A)') "call OUT" !print *,"." !Write output
             case(","); print '(A)',"print *,'Program requests input: '; read(*,*) p; tape(j)=iachar(p)"; 
@@ -181,8 +237,9 @@ program bF2Fortran
             case("]"); print '(A)',"end do"; write(file_unit,'(A)') "end do" !End loop
             case DEFAULT; print *,"Ah, fiddlesticks! What now?" !Should probably comment this out
         end select !We are done with the bulk.
-    i=i+1 !Next index.
+        i=i+1 !Next index.
     end do !Oh! We are done!
+    
     print '(A)',"" !newline
     write(file_unit,'(A)') ""
     !Do our funcs
