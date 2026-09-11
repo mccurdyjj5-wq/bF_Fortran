@@ -26,7 +26,7 @@ gfortran bf2fortran.f90 -o bF2Fortran
 ```
 # Todo
 Here is a list of things I would like to implement in the future. This will be updated as time goes on.
-- Add --debug command-line option
-  - This would dump the tape's contents whenever a # is detected.
+- Add a debug option
+  - This would at least dump the tape's contents whenever a # is detected.
 - Add --eof [none,0,255] command-line option to change the EOF behavior. Default = 0
 - Add --unoptimized flag to bF2Fortran to make the compiler **not** optimize the code. 
