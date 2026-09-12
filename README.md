@@ -11,7 +11,7 @@ bF2Fortran <input.bf> [output.f90] [options]
 ```
 The default output filename is 'output.f90'. It will replace the contents of the output destination if a file exists there already, so be careful! 
 There is an option to not use the optimization feature. To do that, use the '-u' or '--unoptimized' command line options.
-For both programs, the '-d' and '--debug' options will dump the memory of the tape to 'dump.hex' when a '#' is reached in the program, and it will pause execution until an input is entered..
+For both programs, the '-d' and '--debug' options will dump the memory of the tape to 'dump.hex' when a '#' is reached in the program, and it will pause execution until an input is entered.
 # Compatibility
 There are some compatibility issues, as all such Brainfuck interpreters must face. Here are the ones I thought were more important to mention, but there are likely others out there that I do not know of.
 ## EOF
