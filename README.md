@@ -32,4 +32,6 @@ Here is a list of things I would like to implement in the future. This will be u
    - ~~This would dump the tape's contents whenever a # is detected.~~
   - Ideally, this would bring-up a more complex interface, but I don't know how to do that yet.
 - Add --eof [none,0,255] command-line option to change the EOF behavior. Default = 0
-- ~~Add --unoptimized flag to bF2Fortran to make the compiler **not** optimize the code.~~ 
+- ~~Add --unoptimized flag to bF2Fortran to make the compiler **not** optimize the code.~~
+- Add a flag to support tape wrapping
+- Detect unmatched brackets
