@@ -12,9 +12,9 @@ program bF2Fortran
     logical :: end_ops
     integer :: input_unit
     character(512) :: input_file, output_file
-    integer :: file_unit !Hackity Hack Hack 
+    integer :: file_unit,dump !Hackity Hack Hack 
     integer :: ios !Hackity Hack Hack
-    logical :: unop
+    logical :: unop,dbg
     integer :: i,i2,j,j2,k
     character(:), allocatable :: prgm !This is our program.
     character(3000000) :: buffer !Init reading buffer
@@ -35,6 +35,7 @@ program bF2Fortran
     !This is more 'elegant' of a solution than what I previously had in mind.
     !Set up our bois
     unop = .true.
+    dbg = .false.
     input_file = ""
     output_file = ""
     arg_count = command_argument_count()
@@ -51,6 +52,9 @@ program bF2Fortran
             select case(trim(arg)) !Find it.
                 case ("-u", "--unoptimized") !If it is this...
                     unop = .false. !Set this flag to false
+                    cycle !And go on.
+                case ("-d", "--debug") !If it is this...
+                    dbg = .true. !Set this flag to false
                     cycle !And go on.
                 case default !If all else fails...
                     if (len_trim(arg) > 0 .and. arg(1:1) == "-") then !Check amounts of shit
@@ -76,6 +80,7 @@ program bF2Fortran
         print *, "Usage: bF2Fortran <input.bf> [output.f90] [OPTIONS]" !Syntax 1
         print *, "Options:" !Syntax 2
         print *, "-u, --unoptimized : Tells the compiler to not optimize the program." !Syntax 3
+        print *, "-d, --debug : Tells the compiler to make the program dump the contents of the tape." !Syntax 4
         stop 1 !And quit. Just like I almost did on this 'fun' project. God I underestimated this.
     end if
     
@@ -105,12 +110,12 @@ program bF2Fortran
         stop 1 !And quit!
     end if !Hooray! We are successful!
     !print the header of our program
-    write(file_unit,'(A)') "program bF_to_FORTRAN"
+    write(file_unit,'(A)') "program bF_to_FORTRAN" !Start of the program
     write(file_unit,'(A)') ""
-    write(file_unit,'(A)') "integer :: i,j"
-    write(file_unit,'(A)') "integer :: buf_pos, buf_len, ios"
-    write(file_unit,'(A)') "logical :: buffer_full"
-    write(file_unit,'(A)') "character(1) :: p"
+    write(file_unit,'(A)') "integer :: i,j,dump" !Our loopers
+    write(file_unit,'(A)') "integer :: buf_pos, buf_len, ios" !Our buffer variables
+    write(file_unit,'(A)') "logical :: buffer_full" !Our flag
+    write(file_unit,'(A)') "character(1) :: p,nothing" !mm yes, my favorite variable that is used for nothing!
     write(file_unit,'(A)') "character(1000) :: buf"
     write(file_unit,'(A)') "integer :: tape(30000)"
     write(file_unit,'(A)') "tape=0"
@@ -171,7 +176,7 @@ program bF2Fortran
                     !  2. Concatenate using //, cleaning up trailing and leading spaces
                     l2 = "call MVL("//trim(l2)//")"
                     
-                    write(file_unit,'(A)') l2
+                    write(file_unit,'(A)') trim(l2)
                     i2=1
                     k=1
                 else
@@ -197,7 +202,7 @@ program bF2Fortran
                     !  2. Concatenate using //, cleaning up trailing and leading spaces
                     l2 = "call ADD("//trim(l2)//")"
                     
-                    write(file_unit,'(A)') l2
+                    write(file_unit,'(A)') trim(l2)
                     i2=1
                     k=1        
                 else
@@ -223,7 +228,7 @@ program bF2Fortran
                     !  2. Concatenate using //, cleaning up trailing and leading spaces
                     l2 = "call SUB("//trim(l2)//")"
                     
-                    write(file_unit,'(A)') l2
+                    write(file_unit,'(A)') trim(l2)
                     i2=1
                     k=1
                 else
@@ -235,6 +240,10 @@ program bF2Fortran
                 write(file_unit,'(A)') "call INP" !print *,"," !Read input
             case("["); print '(A)',"do while (tape(j)/=0)"; write(file_unit,'(A)') "do while (tape(j)/=0)" !Start loop
             case("]"); print '(A)',"end do"; write(file_unit,'(A)') "end do" !End loop
+            case("#")
+                if (dbg) then
+                    write(file_unit,'(A)') "call DUMPTAPE"
+                end if
             case DEFAULT; print *,"Ah, fiddlesticks! What now?" !Should probably comment this out
         end select !We are done with the bulk.
         i=i+1 !Next index.
@@ -296,6 +305,18 @@ program bF2Fortran
     write(file_unit,'(A)') "        buffer_full=.false. !Make sure that this is false"
     write(file_unit,'(A)') "        end if"
     write(file_unit,'(A)') "    end subroutine INP !Begone, foul subroutine! May your texts never torment me ever again!"
+    write(file_unit,'(A)') ""
+    write(file_unit,'(A)') "    subroutine DUMPTAPE"
+    write(file_unit,'(A)') "        !This dumps all of the tapes contents."
+    write(file_unit,'(A)') "        1 format(A1,$)"
+    write(file_unit,'(A)') "        open(newunit=dump, file='dump.hex', status='replace',&
+    &action='write',position='append',iostat=ios)"
+    write(file_unit,'(A)') "        do m=1,size(tape)"
+    write(file_unit,'(A)') "            write(dump,1) achar(tape(m))"
+    write(file_unit,'(A)') "        end do"
+    write(file_unit,'(A)') "        close(dump)"
+    write(file_unit,'(A)') "        read(*,*) !nothing"
+    write(file_unit,'(A)') "    end subroutine DUMPTAPE"
     print '(A)',"end program bF_to_FORTRAN" !End of our outputted code.
     write(file_unit,'(A)') "end program bF_to_FORTRAN"
     close(file_unit) !And throw this file to the wayside. Good riddence.
