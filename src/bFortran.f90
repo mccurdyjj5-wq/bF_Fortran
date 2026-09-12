@@ -1,14 +1,18 @@
 program bFortran
     !bFORTRAN: A brainfuck interpreter in Fortran.
     !Made by LunaFox
-    !This program is a basic brainfuck interpreter.
+    !This program is a fully fledged brainfuck interpreter. It even has a rudimentery debugging system! 
     !Everything should work to specification. If anything doesn't work, please tell me!
     !All documentaion should be in the readMe. Good luck!
     !Now, onto the main show!
-    !use, intrinsic :: iso_fortran_env !This will be useful. Actually not very useful, but oh well.
+
     !Set up the variables, arrays, etc. 
-    integer :: input_unit
-    character(512) :: input_file
+    integer :: arg_count, arg_index, pos_count
+    character(512) :: arg, err_msg
+    logical :: end_ops
+    logical :: dbg
+    integer :: input_unit,dump
+    character(512) :: input_file,nothing
     integer :: ios !Hackity Hack Hack
     integer :: i,i2,j,k,m,n,o,c,b
     INTEGER MSG,KBD
@@ -20,7 +24,6 @@ program bFortran
     character(1) :: l,p
     integer :: buf_pos, buf_len
     logical :: buffer_full
-    !integer :: p
     tape=0 !This is our 'RAM', in a sense. This sets it all to zero.
     i=1 !This is our program index, and our primary looping variable. It is 1.
     i2=1 !This is our secondary program index. Fortran arrays are 1 indexed.
@@ -35,39 +38,69 @@ program bFortran
     !(god there are a lot of lines)
     !Just be careful with your line lengths, lest you trigger line truncation! /j
     prgm=""
-    !This is our reader. I had to set a placeholder.
-    !print *,"Please input a program: "
-    !read(*, '(A)', iostat=err) input_string
-    !I call upon you, old sketchy hack from 2010! Please, make this work, and make it work well!
-    
-    !print *,"Please input a program: " !This is the input prompt.
-    !buffer="" !This resets our buffer.
-    !read(*,'(A)') buffer !We store the input in this buffer.
-    !print *,buffer
-    !prgm=trim(buffer) !We trim the buffer and put that in the program array.
-    if (command_argument_count() < 1) then !If there is no input... 
-        print *, "Usage: bFortran <input.bf>" !Tell them that they are, in fact, an idiot.
+
+    !This is more 'elegant' of a solution than what I previously had in mind.
+    !Set up our bois
+    dbg = .false.
+    input_file = ""
+    arg_count = command_argument_count()
+    pos_count = 0
+    end_ops = .false.
+    !Let's get to checkin, bois!
+    do arg_index = 1, arg_count !While we have arguments to check...
+        call get_command_argument(arg_index, arg) !Get our index.
+        if (.not. end_ops .and. trim(arg) == "--") then !If our options are at the end...
+            end_ops = .true. !Set this as true.
+            cycle !Skip this cycle.
+        end if !Alright.
+        if (.not. end_ops) then !If this is not true...
+            select case(trim(arg)) !Find it.
+                case ("-d", "--debug") !If it is this...
+                    dbg = .true. !Set this flag to false
+                    cycle !And go on.
+                case default !If all else fails...
+                    if (len_trim(arg) > 0 .and. arg(1:1) == "-") then !Check amounts of shit
+                        print *, "Error: unknown option: ", trim(arg) !Error out.
+                        stop 1 !And quit. Unlike me, who will maintain this for as long as I can.
+                    end if !Ok
+            end select !Cool
+        end if !Alright
+        pos_count = pos_count + 1 !Add one to this
+        select case (pos_count) !Let's check!
+            case (1) !If it if the input...
+                input_file = trim(arg) !Add this to our input
+            case default !Else...
+                print *, "Error: too many positional arguments." !Error out
+                stop 1 !And quit. Unlike me, who will maintain this for as long as I can.
+        end select !So close...
+    end do !And we are done!
+
+    !find our files
+    if (len_trim(input_file) == 0) then !If there is no file, tell the user that they are, in fact, an idiot. 
+        print *, "Usage: bFortran <input.bf> [OPTIONS]" !Syntax 1
+        print *, "Options:" !Syntax 2
+        print *, "-d, --debug : Tells the interpreter to dump the contents of the tape and wait for user input" !Syntax 3
         stop 1 !And quit. Just like I almost did on this 'fun' project. God I underestimated this.
-    end if !Ok.
-    call get_command_argument(1, input_file) !Don't know why this is placed here.
-    open(newunit=input_unit, file=trim(input_file), status="old", & !Let us look at this file.
-            action="read", iostat=ios)
-    if (ios /= 0) then !If error...
-        print *, "Error: could not open input file: ", trim(input_file) !Say this shtick
-        stop 1 !And quit!
+    end if
+    
+    open(newunit=input_unit, file=trim(input_file), status="old", action="read", iostat=ios, iomsg=err_msg) !Try to open the file.
+    if (ios /= 0) then !If err...
+        print *, "Error: could not open input file: ", trim(input_file) !Tell them about this shit
+        print *, "Details: ", trim(err_msg) !Give them reasons.
+        stop 1 !And quit. Simple enough.
     end if !This isn't that hard!
+    
     do !Noclue why works, but it works regardless so it stays. No touchie. 3:<
         read(input_unit, '(A)', iostat=ios) buffer !Read the file into the buffer.
         if (ios /= 0) exit !If it errors we leave
         prgm = prgm // trim(buffer) !Else we do what we did before :)
     end do !Alright, touchie is back on :3
     close(input_unit) !We are done with that.
+
     n=len(prgm) !allocate 1...
     allocate(ind(n), jmp1(n), jmp2(n)) !And allocate 2!
     ind=[0]
     jmp1=[0]
-    !jmp1=[6,9] !The index of where to jump to after a '['
-    !jmp2=[4,16] !The index of where to jump to after a ']'
     
     !Preprocess the whole damn program cause thats the oly way i coulf think of getting this piece of shit program working.
     !This first part tracks the indexes of '['s
@@ -185,7 +218,16 @@ program bFortran
                         end do !It was still bad, but...
                         c=1 !Reset, Retreat!
                     end if !Done with that.
-            case DEFAULT; !print *,"Ah, fiddlesticks! What now?"
+            case("#") !Dump our garbage in the files
+                if (dbg) then !To dump, or not to dump? That is the question...
+                    open(newunit=dump, file='dump.hex', status='replace',action='write',position='append',iostat=ios)!Open our dump. should probably make it so that it has a different file name, but oh well.
+                    do m=1,size(tape) !Loop the dump
+                    	write(dump,1) achar(tape(m)) !Write value to the dump
+                    end do !Done wi
+                    close(dump) !th that
+                    read(*,*) nothing !pause for a moment
+                end if !Oh! Yay!
+            case DEFAULT; !Ignore everthing else...
         end select !We are done with the bulk.
     i=i+1 !Next index.
     !debug stuff, please ignore
