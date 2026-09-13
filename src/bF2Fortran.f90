@@ -15,12 +15,13 @@ program bF2Fortran
     integer :: file_unit,dump !Hackity Hack Hack 
     integer :: ios !Hackity Hack Hack
     logical :: unop,dbg
-    integer :: i,i2,j,j2,k
+    integer :: i,i2,j,j2,k,x,y
     character(:), allocatable :: prgm !This is our program.
     character(3000000) :: buffer !Init reading buffer
     integer :: tape(30000)!This is our cell array. It is currently set to 8 bit mode.
     character(1) :: l,p,r
     character(100) :: l2
+    character(1) :: tar1, tar2
     !integer :: p
     tape=0 !This is our 'RAM', in a sense. This sets it all to zero.
     i=1 !This is our program index, and our primary looping variable. It is 1.
@@ -30,6 +31,8 @@ program bF2Fortran
     k=0 !Here be dragons in this variable. It's behaviour is unknown. (pls help)
     l2="" !Hackity Hack Hack oooh Oh
     1 format(A1,$) !Not used here, just for reference.
+    tar1 = "["
+    tar2 = "]"
     !This is a sample program. If this gets sent out, just know that that shouldn't happen.
     prgm="" !It's a fox.
     !This is more 'elegant' of a solution than what I previously had in mind.
@@ -109,6 +112,26 @@ program bF2Fortran
         print *, "Details: ", trim(err_msg) !Details ig
         stop 1 !And quit!
     end if !Hooray! We are successful!
+    !This section checks the brackets are balanced.
+    x=count([(prgm(n1:n1) == tar1, n1 = 1, len(prgm))]) !Count the number of [
+    y=count([(prgm(n2:n2) == tar2, n2 = 1, len(prgm))]) !Count the number of ]
+    print *,"[ =",x," ] = ",y !Print out those numbers
+    if (x/=y) stop "Unbalanced bracket(s)!" !If they are not equal, leave
+    !This section checks to see if our loops are enclosed.
+    x=1 !Reset
+    y=0 !Reuse
+    !Reduce
+    do while (x<=len(prgm)) !While we are looking...
+        l=prgm(x:x) !Case selector
+        select case(l) !Do us a favor and...
+        case("["); y=y+1 !Go one loop deeper.
+        case("]"); y=y-1 !Escape a loop.
+        case default; !Do nothing.
+        end select !Alright.
+        print *,"Nesting is ",y," levels deep." !Print some debug info
+        if (y<0) stop "Unmatched bracket(s)!" !If they are not balanced, leave
+        x=x+1 !Go to the next.
+    end do !And we are successful. Now onto the hard part.
     !print the header of our program
     write(file_unit,'(A)') "program bF_to_FORTRAN" !Start of the program
     write(file_unit,'(A)') ""
