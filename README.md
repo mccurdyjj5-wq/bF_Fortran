@@ -17,7 +17,7 @@ There are some compatibility issues, as all such Brainfuck interpreters must fac
 ## EOF
 The most major compatibility issue is EOF, as always. It is currently set-up to return 0x00 on EOF. I am currently working on fixing this, but I am still learning Fortran, so this is currently not a high priority for me, anyways.
 ## Tape Size
-The program currently supports a tape size of 30,000 cells. I do not plan on changing this, but I may add an option to use a custom tape size. I do not know the behavior of going out of bounds on the tape array, but just treat it as like C, please. It probably doesn't support wrapping around, either way.
+The program currently supports a tape size of 30,000 cells. I do not plan on changing this, but I may add an option to use a custom tape size. It will error out if the tape goes out of bounds, so be careful.
 ## Other Issues
 There are some Brainfuck programs that do not work, but I can't figure out why. If anyone who is more knowledgeable than I am would like to help, please do! I can only do so much with my current knowledge and experience.
 # Compiling from source
