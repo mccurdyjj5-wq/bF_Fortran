@@ -238,5 +238,5 @@ program bFortran
     !write(*,*) jmp1
     !write(*,*) jmp2
     !write(*,*) ind
-    
+    deallocate(ind, jmp1, jmp2)
 end program bFortran
