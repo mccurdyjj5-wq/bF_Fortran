@@ -11,7 +11,7 @@ program bFortran
     character(512) :: arg, err_msg
     logical :: end_ops
     logical :: dbg
-    integer :: input_unit,dump
+    integer :: input_unit,dump,occur
     character(512) :: input_file,nothing
     integer :: ios !Hackity Hack Hack
     integer :: i,i2,j,k,m,n,o,c,b
@@ -103,6 +103,7 @@ program bFortran
     jmp1=[0]
     
     !Preprocess the whole damn program cause thats the oly way i coulf think of getting this piece of shit program working.
+    !Note: Ignore this ^ comment.
     !This first part tracks the indexes of '['s
     b=0 !Clear our nesting counter
     !print *,"Finding loop start indices..."
@@ -142,8 +143,7 @@ program bFortran
                         !print *,"end found!"
                         jmp1=[jmp1,i] !Add this index to the end tracker.
                         exit !Leave this loop and go to the next index
-                    end if !Well, it is kinda embaressing how long it took to
-                           !figure this solution out.
+                    end if !Well, it is kinda embaressing how long it took to figure this solution out.
             end select !At least it works.
             !print *,"next program thingie"
             i=i+1 !Next character.
@@ -151,6 +151,8 @@ program bFortran
         !print *,"Next starting point"
         i2=i2+1 !Go to the next starting point.
     end do !Well that was easy. whats next
+    occur=count([(prgm(i:i) == "]", i = 1, len(prgm))])
+    if (size(jmp2)>size(jmp1)) stop "Unbalanced bracket(s)!" !This checks for unmatched brackets.
     !Reset our variables.
     i=1
     i2=1
@@ -168,7 +170,7 @@ program bFortran
             case("+"); tape(j) = modulo(tape(j)+1,256); !print *,"+" !Increment
             case("-"); tape(j) = modulo(tape(j)-1,256); !print *,"-" !Decrement
             case("."); write(*,1) achar(tape(j)); !print *,"." !Write output
-            case(",");
+            case(",")
                 if (.not. buffer_full) then !If we have read everything so far...
                     read(*,'(A)',iostat=ios) buf !Take user input.
                     if (ios /= 0) then !If there is nothing/an error...
@@ -238,5 +240,5 @@ program bFortran
     !write(*,*) jmp1
     !write(*,*) jmp2
     !write(*,*) ind
-    deallocate(ind, jmp1, jmp2)
+    deallocate(ind, jmp1, jmp2)  !Forgot to do this. whoops!
 end program bFortran
