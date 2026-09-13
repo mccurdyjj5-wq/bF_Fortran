@@ -1,5 +1,5 @@
 # bF_Fortran
-bF_Fortran (v1.1.0) is a command line Brainfuck interpreter and compiler suite written in Fortran. It currently only supports Windows, for I lack the knowledge to do cross-compilation.
+bF_Fortran (v1.1.1) is a command line Brainfuck interpreter and compiler suite written in Fortran. It currently only supports Windows, for I lack the knowledge to do cross-compilation.
 # Usage
 bFortran is the interpreter. To use it, just run it with the filename of the program you wish to run, like so:
 ```
@@ -34,4 +34,5 @@ Here is a list of things I would like to implement in the future. This will be u
 - Add --eof [none,0,255] command-line option to change the EOF behavior. Default = 0
 - ~~Add --unoptimized flag to bF2Fortran to make the compiler **not** optimize the code.~~
 - Add a flag to support tape wrapping
-- Detect unmatched brackets
+- ~~Detect unmatched brackets~~
+- Add flag to change the size of the memory array
